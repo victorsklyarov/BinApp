@@ -23,6 +23,8 @@ import com.zeroillusion.binapp.databinding.FragmentBinBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.net.UnknownHostException
+import javax.net.ssl.SSLHandshakeException
 
 class BinFragment : Fragment() {
 
@@ -187,116 +189,130 @@ class BinFragment : Fragment() {
     }
 
     private fun getBin(bin: String) {
-        val retrofit = Bin.getInstance()
-        val apiInterface = retrofit.create(BinApi::class.java)
-
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                val response = apiInterface.getBin(bin)
-                val binItem = response.execute().body()
-
-                if (binItem == null) {
-                    requireActivity().runOnUiThread {
-                        Toast.makeText(
-                            requireContext(),
-                            resources.getString(R.string.warning_bin),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-
-                if (binItem?.scheme != null) {
-                    binViewModel.setScheme(binItem.scheme.toString())
-                } else {
-                    binViewModel.setScheme("")
-                }
-                if (binItem?.brand != null) {
-                    binViewModel.setBrand(binItem.brand.toString())
-                } else {
-                    binViewModel.setBrand("")
-                }
-                if (binItem?.number?.length != null) {
-                    binViewModel.setLength(binItem.number?.length.toString())
-                } else {
-                    binViewModel.setLength("")
-                }
-                if (binItem?.number?.luhn != null) {
-                    binViewModel.setLuhn(binItem.number?.luhn.toString())
-                } else {
-                    binViewModel.setLuhn("")
-                }
-                if (binItem?.type != null) {
-                    binViewModel.setType(binItem.type.toString())
-                } else {
-                    binViewModel.setType("")
-                }
-                if (binItem?.prepaid != null) {
-                    binViewModel.setPrepaid(binItem.prepaid.toString())
-                } else {
-                    binViewModel.setPrepaid("")
-                }
-                if ((binItem?.country?.emoji != null)
-                    and (binItem?.country?.alpha2 != null)
-                    and (binItem?.country?.name != null)
-                ) {
-                    binViewModel.setCountry(
-                        resources.getString(
-                            R.string.country_format,
-                            binItem?.country?.emoji.toString(),
-                            binItem?.country?.alpha2.toString(),
-                            binItem?.country?.name.toString()
-                        )
-                    )
-                } else {
-                    binViewModel.setCountry("")
-                }
-                if ((binItem?.country?.latitude != null) and (binItem?.country?.longitude != null)) {
-                    binViewModel.setCoordinates(
-                        resources.getString(
-                            R.string.coordinates,
-                            binItem?.country?.latitude.toString(),
-                            binItem?.country?.longitude.toString()
-                        )
-                    )
-                } else {
-                    binViewModel.setCoordinates("")
-                }
-                if ((binItem?.bank?.name != null) and (binItem?.bank?.city != null)) {
-                    binViewModel.setBank(
-                        resources.getString(
-                            R.string.bank_format,
-                            binItem?.bank?.name.toString(),
-                            binItem?.bank?.name.toString()
-                        )
-                    )
-                } else if (binItem?.bank?.name != null) {
-                    binViewModel.setBank(binItem.bank?.name.toString())
-                } else {
-                    binViewModel.setBank("")
-                }
-                if (binItem?.bank?.url != null) {
-                    binViewModel.setUrl(binItem.bank?.url.toString())
-                } else {
-                    binViewModel.setUrl("")
-                }
-                if (binItem?.bank?.phone != null) {
-                    binViewModel.setPhone(binItem.bank?.phone.toString())
-                } else {
-                    binViewModel.setPhone("")
-                }
-                if (binItem?.country?.latitude != null) {
-                    binViewModel.setLatitude(binItem.country?.latitude.toString())
-                } else {
-                    binViewModel.setLatitude("")
-                }
-                if (binItem?.country?.longitude != null) {
-                    binViewModel.setLongitude(binItem.country?.longitude.toString())
-                } else {
-                    binViewModel.setLongitude("")
-                }
-            } catch (e: Exception) {
+                updateUI(
+                    Bin.getInstance()
+                        .create(BinApi::class.java)
+                        .getBin(bin)
+                        .execute()
+                        .body()
+                )
+            } catch (e: SSLHandshakeException) {
+                updateUI(
+                    Bin.getInstanceUnsafe()
+                        .create(BinApi::class.java)
+                        .getBin(bin)
+                        .execute()
+                        .body()
+                )
+            } catch (e: UnknownHostException) {
                 showError()
+            } catch (e: Exception) {
+                showError(e)
             }
+        }
+    }
+
+    private fun updateUI(binItem: BinItem?) {
+        if (binItem == null) {
+            requireActivity().runOnUiThread {
+                Toast.makeText(
+                    requireContext(),
+                    resources.getString(R.string.warning_bin),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        if (binItem?.scheme != null) {
+            binViewModel.setScheme(binItem.scheme.toString())
+        } else {
+            binViewModel.setScheme("")
+        }
+        if (binItem?.brand != null) {
+            binViewModel.setBrand(binItem.brand.toString())
+        } else {
+            binViewModel.setBrand("")
+        }
+        if (binItem?.number?.length != null) {
+            binViewModel.setLength(binItem.number?.length.toString())
+        } else {
+            binViewModel.setLength("")
+        }
+        if (binItem?.number?.luhn != null) {
+            binViewModel.setLuhn(binItem.number?.luhn.toString())
+        } else {
+            binViewModel.setLuhn("")
+        }
+        if (binItem?.type != null) {
+            binViewModel.setType(binItem.type.toString())
+        } else {
+            binViewModel.setType("")
+        }
+        if (binItem?.prepaid != null) {
+            binViewModel.setPrepaid(binItem.prepaid.toString())
+        } else {
+            binViewModel.setPrepaid("")
+        }
+        if ((binItem?.country?.emoji != null)
+            and (binItem?.country?.alpha2 != null)
+            and (binItem?.country?.name != null)
+        ) {
+            binViewModel.setCountry(
+                resources.getString(
+                    R.string.country_format,
+                    binItem?.country?.emoji.toString(),
+                    binItem?.country?.alpha2.toString(),
+                    binItem?.country?.name.toString()
+                )
+            )
+        } else {
+            binViewModel.setCountry("")
+        }
+        if ((binItem?.country?.latitude != null) and (binItem?.country?.longitude != null)) {
+            binViewModel.setCoordinates(
+                resources.getString(
+                    R.string.coordinates,
+                    binItem?.country?.latitude.toString(),
+                    binItem?.country?.longitude.toString()
+                )
+            )
+        } else {
+            binViewModel.setCoordinates("")
+        }
+        if ((binItem?.bank?.name != null) and (binItem?.bank?.city != null)) {
+            binViewModel.setBank(
+                resources.getString(
+                    R.string.bank_format,
+                    binItem?.bank?.name.toString(),
+                    binItem?.bank?.name.toString()
+                )
+            )
+        } else if (binItem?.bank?.name != null) {
+            binViewModel.setBank(binItem.bank?.name.toString())
+        } else {
+            binViewModel.setBank("")
+        }
+        if (binItem?.bank?.url != null) {
+            binViewModel.setUrl(binItem.bank?.url.toString())
+        } else {
+            binViewModel.setUrl("")
+        }
+        if (binItem?.bank?.phone != null) {
+            binViewModel.setPhone(binItem.bank?.phone.toString())
+        } else {
+            binViewModel.setPhone("")
+        }
+        if (binItem?.country?.latitude != null) {
+            binViewModel.setLatitude(binItem.country?.latitude.toString())
+        } else {
+            binViewModel.setLatitude("")
+        }
+        if (binItem?.country?.longitude != null) {
+            binViewModel.setLongitude(binItem.country?.longitude.toString())
+        } else {
+            binViewModel.setLongitude("")
         }
     }
 
@@ -344,11 +360,11 @@ class BinFragment : Fragment() {
         }
     }
 
-    private fun showError() {
+    private fun showError(e: Exception? = null) {
         requireActivity().runOnUiThread {
             Toast.makeText(
                 requireContext(),
-                resources.getString(R.string.warning_internet),
+                e?.toString() ?: resources.getString(R.string.warning_internet),
                 Toast.LENGTH_LONG
             )
                 .show()
